@@ -54,4 +54,52 @@ abstract class SecureChannelWrapper {
     protected abstract CommandAPDU wrap(CommandAPDU command) throws GPException;
 
     protected abstract ResponseAPDU unwrap(ResponseAPDU response) throws GPException;
+
+    /**
+     * Encrypt sensible data with DEK key of secure chanel. Similar to Global Platform's
+     * method <code>SecureChannel.encryptData(&ldots;)</code> method on host's side.
+     *
+     * @param baBuffer a byte array containing data to be encrypted
+     * @param sOffset  offset of data to be encrypted
+     * @param sLength  length of data to be encrypted
+     *
+     * @return a byte array containing encrypted data
+     * @throws GPException
+     */
+    public abstract byte[] encryptData(byte[] baBuffer, short sOffset, short sLength) throws GPException;
+
+    /**
+     * Decrypt sensible data with DEK key of secure chanel. Similar to Global Platform's
+     * method <code>SecureChannel.decryptData(&ldots;)</code> method on host's side.
+     *
+     * @param baBuffer a byte array containing data to be decrypted
+     * @param sOffset  offset of data to be encrypted
+     * @param sLength  length of data to be encrypted
+     *
+     * @return a byte array containing encrypted data
+     * @throws GPException
+     */
+    public abstract byte[] decryptData(byte[] baBuffer, short sOffset, short sLength) throws GPException;
+
+    /**
+     * Encrypt sensible data with DEK key of secure chanel.
+     *
+     * @param data a byte array containing data to be encrypted
+     * @return data encrypted with Secure Channel DEK key
+     * @throws GPException
+     */
+    public byte[] encryptData(byte[] data) throws GPException {
+        return this.encryptData(data, (short) 0, (short) data.length);
+    }
+
+    /**
+     * Decrypt sensible data with DEK key of secure chanel.
+     *
+     * @param data a byte array containing data to be encrypted
+     * @return data decrypted with Secure Channel DEK key
+     * @throws GPException
+     */
+    public byte[] decryptData(byte[] data) throws GPException {
+        return this.decryptData(data, (short) 0, (short) data.length);
+    }
 }

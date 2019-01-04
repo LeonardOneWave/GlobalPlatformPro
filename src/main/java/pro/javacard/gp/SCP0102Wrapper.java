@@ -26,6 +26,8 @@ import javax.smartcardio.ResponseAPDU;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -237,5 +239,34 @@ class SCP0102Wrapper extends SecureChannelWrapper {
             response = new ResponseAPDU(o.toByteArray());
         }
         return response;
+    }
+
+    @Override
+    public byte[] encryptData(byte[] baBuffer, short sOffset, short sLength) throws GPException {
+        if(sLength%8 != 0) throw new InvalidParameterException("Encrypted Sensible Data must have a length that is a multiple of 8");
+        try {
+            Cipher c = Cipher.getInstance(GPCrypto.DES3_ECB_CIPHER);
+            c.init(Cipher.ENCRYPT_MODE, sessionKeys.getKeyFor(GPSessionKeyProvider.KeyPurpose.DEK).getKeyAs(GPKey.Type.DES3));
+            return c.doFinal(baBuffer, sOffset, sLength);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            throw new IllegalStateException("Sensitive Data Encryption failed", e);
+        } catch (GeneralSecurityException e) {
+            throw new GPException("Sensitive Data Encryption failed", e);
+        }
+    }
+
+    @Override
+    public byte[] decryptData(byte[] baBuffer, short sOffset, short sLength) throws GPException {
+       try {
+            Cipher c = Cipher.getInstance(GPCrypto.DES3_ECB_CIPHER);
+            c.init(Cipher.DECRYPT_MODE, sessionKeys.getKeyFor(GPSessionKeyProvider.KeyPurpose.DEK).getKeyAs(GPKey.Type.DES3));
+            return c.doFinal(baBuffer, sOffset, sLength);
+        } catch (NoSuchPaddingException | NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Sensitive Data Decryption failed", e);
+        } catch (InvalidKeyException e) {
+            throw new InvalidParameterException("DEK key is invalid");
+        } catch (GeneralSecurityException e) {
+            throw new GPException("Sensitive Data Decryption failed", e);
+        }
     }
 }

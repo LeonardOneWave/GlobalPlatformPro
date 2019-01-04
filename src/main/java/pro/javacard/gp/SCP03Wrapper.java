@@ -29,6 +29,8 @@ import javax.smartcardio.ResponseAPDU;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -176,6 +178,39 @@ class SCP03Wrapper extends SecureChannelWrapper {
             throw new IllegalStateException("APDU unwrapping failed", e);
         } catch (GeneralSecurityException e) {
             throw new GPException("APDU unwrapping failed", e);
+        }
+    }
+
+    @Override
+    public byte[] encryptData(byte[] baBuffer, short sOffset, short sLength) throws GPException {
+        if(sLength%16 != 0) throw new InvalidParameterException("Encrypted Sensible Data must have a length that is a multiple of 8");
+        try {
+            Cipher c = Cipher.getInstance(GPCrypto.AES_CBC_CIPHER);
+            byte[] iv = new byte[16];
+            Arrays.fill(iv, (byte) 0);
+            c.init(Cipher.ENCRYPT_MODE, sessionKeys.getKeyFor(GPSessionKeyProvider.KeyPurpose.DEK).getKeyAs(GPKey.Type.AES), new IvParameterSpec(iv));
+            return c.doFinal(baBuffer, sOffset, sLength);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            throw new IllegalStateException("Sensitive data encryption failed", e);
+        } catch (GeneralSecurityException e) {
+            throw new GPException("Sensitive data encryption failed", e);
+        }
+    }
+
+    @Override
+    public byte[] decryptData(byte[] baBuffer, short sOffset, short sLength) throws GPException {
+        try {
+            Cipher c = Cipher.getInstance(GPCrypto.AES_CBC_CIPHER);
+            byte[] iv = new byte[16];
+            Arrays.fill(iv, (byte) 0);
+            c.init(Cipher.DECRYPT_MODE, sessionKeys.getKeyFor(GPSessionKeyProvider.KeyPurpose.DEK).getKeyAs(GPKey.Type.AES), new IvParameterSpec(iv));
+            return c.doFinal(baBuffer, sOffset, sLength);
+        } catch (NoSuchPaddingException | NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Sensitive data decryption failed", e);
+        } catch (InvalidKeyException e) {
+            throw new InvalidParameterException("DEK key is invalid");
+        } catch (GeneralSecurityException e) {
+            throw new GPException("Sensitive data decryption failed", e);
         }
     }
 }

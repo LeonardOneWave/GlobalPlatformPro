@@ -43,7 +43,11 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.interfaces.RSAPublicKey;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Collections;
 
 /**
  * Represents a connection to a GlobalPlatform Card (BIBO interface)
@@ -1150,6 +1154,14 @@ public class GlobalPlatform extends CardChannel implements AutoCloseable {
             throw new RuntimeException(e);
         }
         return bo.toByteArray();
+    }
+
+    public byte[] encryptDataWithSecureChannelDek(byte[] data) throws GPException {
+        return wrapper.encryptData(data);
+    }
+
+    public byte[] decryptDataWithSecureChannelDek(byte[] data) throws GPException {
+        return wrapper.decryptData(data);
     }
 
     private GPRegistry getStatus() throws CardException, GPException {
